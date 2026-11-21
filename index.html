@@ -14,6 +14,22 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&amp;family=Playfair+Display:ital,wght@1,700;1,800&amp;display=swap" rel="stylesheet">
 <style>
 body{margin:0;background:#FBE4E5}
+.fsopen{position:absolute;top:12px;right:14px;display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 14px;border:0;border-radius:999px;background:#FFFFFF;color:#B0252C;font-size:12.5px;font-weight:700;box-shadow:0 8px 20px -10px rgba(196,45,50,0.6)}
+.fsopen:hover{background:#FCEDEE}
+.stage img.zoomable{cursor:zoom-in}
+.reveal:has(.lbx),.reveal:has(.fsx){animation:none!important;transform:none!important}
+.fsx{position:fixed;inset:0;z-index:60;background:#1C1012;display:flex;flex-direction:column;font-family:'DM Sans',system-ui,sans-serif;outline:none}
+.fsbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;flex-shrink:0}
+.fscount{font-size:13px;font-weight:700;background:#FFFFFF;color:#B0252C;border-radius:999px;padding:5px 12px}
+.fsbtn{min-height:40px;padding:0 16px;border:1.5px solid #FFFFFF;border-radius:999px;background:transparent;color:#FFFFFF;font-size:13px;font-weight:600}
+.fsbtn:hover{background:rgba(255,255,255,.12)}
+.fsscroll{flex:1;min-height:0;overflow:auto;display:flex;padding:4px 80px 24px;-webkit-overflow-scrolling:touch}
+.fsimg{margin:auto;max-width:100%;max-height:100%;width:auto;height:auto;display:block;border-radius:8px;background:#FFFFFF;cursor:zoom-in}
+.fsimg.zoomed{max-width:none;max-height:none;height:auto;flex:none;cursor:zoom-out}
+.fsnav{position:absolute;top:50%;transform:translateY(-50%);width:52px;height:52px;border-radius:50%;border:0;background:#FFFFFF;color:#B0252C;display:grid;place-items:center}
+.fsnav.prev{left:14px}.fsnav.next{right:14px}
+.fsnav:disabled{opacity:.35;cursor:default}
+@media (max-width: 760px){.fsscroll{padding:4px 8px 84px}.fsnav{top:auto;bottom:18px;transform:none}.fsnav.prev{left:18px}.fsnav.next{right:18px}.fsopen{top:10px;right:10px;padding:0 12px}}
 @media (max-width: 760px){body{background:#FFFFFF}.pagepad{padding:0!important;background:#FFFFFF!important}}
 *{box-sizing:border-box}
 a{color:#B0252C;text-decoration:none}a:hover{color:#8E1C22}
@@ -280,7 +296,8 @@ button{font:inherit;cursor:pointer}
             <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
               <div class="stage" tabIndex="0" onKeyDown="{{ v.onKey }}" aria-label="Slide viewer. Use the left and right arrow keys to change slides." style="position: relative; height: 580px; background: #FBE4E5; border-radius: 14px; display: flex; align-items: center; justify-content: center; padding: 24px 74px">
                 <span aria-live="polite" style="position: absolute; top: 14px; left: 14px; font-size: 12px; font-weight: 700; background: #FFFFFF; border-radius: 999px; padding: 5px 12px; color: #B0252C">{{ v.counter }}</span>
-                <img src="{{ v.src }}" alt="{{ v.alt }}" style="max-width: 100%; max-height: 100%; border-radius: 10px; background: #FFFFFF; box-shadow: 0 30px 60px -30px rgba(120,30,40,0.55), 0 2px 10px rgba(120,30,40,0.08); display: block">
+                <img class="zoomable" src="{{ v.src }}" alt="{{ v.alt }}" onClick="{{ v.openFs }}" title="Open full screen" style="max-width: 100%; max-height: 100%; border-radius: 10px; background: #FFFFFF; box-shadow: 0 30px 60px -30px rgba(120,30,40,0.55), 0 2px 10px rgba(120,30,40,0.08); display: block">
+                <button class="fsopen" onClick="{{ v.openFs }}" aria-label="Open slide full screen"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg><span>Full screen</span></button>
                 <button class="arrow prev" onClick="{{ v.prev }}" aria-label="Previous slide" disabled="{{ v.atStart }}" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 46px; height: 46px; border-radius: 50%; border: 0; background: #FFFFFF; color: #B0252C; display: grid; place-items: center; box-shadow: 0 8px 20px -10px rgba(196,45,50,0.6)">
                   <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                 </button>
@@ -526,6 +543,23 @@ button{font:inherit;cursor:pointer}
 
 </div>
 </div>
+
+<sc-if value="{{ v.fs }}" hint-placeholder-val="{{ false }}">
+  <div class="fsx" role="dialog" aria-modal="true" aria-label="Slide viewer, full screen. Use the arrow keys to change slides." tabIndex="0" onKeyDown="{{ v.fsKey }}">
+    <div class="fsbar">
+      <span class="fscount" aria-live="polite">{{ v.counter }}</span>
+      <div style="display: flex; gap: 8px">
+        <button class="fsbtn" onClick="{{ v.toggleZoom }}">{{ v.zoomLabel }}</button>
+        <button class="fsbtn" onClick="{{ v.closeFs }}" aria-label="Close full screen">Close</button>
+      </div>
+    </div>
+    <div class="fsscroll">
+      <img class="{{ v.fsImgCls }}" style="{{ v.fsImgStyle }}" src="{{ v.src }}" alt="{{ v.alt }}" onClick="{{ v.toggleZoom }}">
+    </div>
+    <button class="fsnav prev" onClick="{{ v.prev }}" aria-label="Previous slide" disabled="{{ v.atStart }}"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+    <button class="fsnav next" onClick="{{ v.next }}" aria-label="Next slide" disabled="{{ v.atEnd }}"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+  </div>
+</sc-if>
 </template>
 <noscript><p style="font-family:sans-serif;padding:24px">Please enable JavaScript to view this portfolio.</p></noscript>
 <script>(function(global,factory){typeof exports==="object"&&typeof module!=="undefined"?module.exports=factory():typeof define==="function"&&define.amd?define(factory):(global=global||self,global.morphdom=factory())})(this,function(){"use strict";var DOCUMENT_FRAGMENT_NODE=11;function morphAttrs(fromNode,toNode){var toNodeAttrs=toNode.attributes;var attr;var attrName;var attrNamespaceURI;var attrValue;var fromValue;if(toNode.nodeType===DOCUMENT_FRAGMENT_NODE||fromNode.nodeType===DOCUMENT_FRAGMENT_NODE){return}for(var i=toNodeAttrs.length-1;i>=0;i--){attr=toNodeAttrs[i];attrName=attr.name;attrNamespaceURI=attr.namespaceURI;attrValue=attr.value;if(attrNamespaceURI){attrName=attr.localName||attrName;fromValue=fromNode.getAttributeNS(attrNamespaceURI,attrName);if(fromValue!==attrValue){if(attr.prefix==="xmlns"){attrName=attr.name}fromNode.setAttributeNS(attrNamespaceURI,attrName,attrValue)}}else{fromValue=fromNode.getAttribute(attrName);if(fromValue!==attrValue){fromNode.setAttribute(attrName,attrValue)}}}var fromNodeAttrs=fromNode.attributes;for(var d=fromNodeAttrs.length-1;d>=0;d--){attr=fromNodeAttrs[d];attrName=attr.name;attrNamespaceURI=attr.namespaceURI;if(attrNamespaceURI){attrName=attr.localName||attrName;if(!toNode.hasAttributeNS(attrNamespaceURI,attrName)){fromNode.removeAttributeNS(attrNamespaceURI,attrName)}}else{if(!toNode.hasAttribute(attrName)){fromNode.removeAttribute(attrName)}}}}var range;var NS_XHTML="http://www.w3.org/1999/xhtml";var doc=typeof document==="undefined"?undefined:document;var HAS_TEMPLATE_SUPPORT=!!doc&&"content"in doc.createElement("template");var HAS_RANGE_SUPPORT=!!doc&&doc.createRange&&"createContextualFragment"in doc.createRange();function createFragmentFromTemplate(str){var template=doc.createElement("template");template.innerHTML=str;return template.content.childNodes[0]}function createFragmentFromRange(str){if(!range){range=doc.createRange();range.selectNode(doc.body)}var fragment=range.createContextualFragment(str);return fragment.childNodes[0]}function createFragmentFromWrap(str){var fragment=doc.createElement("body");fragment.innerHTML=str;return fragment.childNodes[0]}function toElement(str){str=str.trim();if(HAS_TEMPLATE_SUPPORT){return createFragmentFromTemplate(str)}else if(HAS_RANGE_SUPPORT){return createFragmentFromRange(str)}return createFragmentFromWrap(str)}function compareNodeNames(fromEl,toEl){var fromNodeName=fromEl.nodeName;var toNodeName=toEl.nodeName;var fromCodeStart,toCodeStart;if(fromNodeName===toNodeName){return true}fromCodeStart=fromNodeName.charCodeAt(0);toCodeStart=toNodeName.charCodeAt(0);if(fromCodeStart<=90&&toCodeStart>=97){return fromNodeName===toNodeName.toUpperCase()}else if(toCodeStart<=90&&fromCodeStart>=97){return toNodeName===fromNodeName.toUpperCase()}else{return false}}function createElementNS(name,namespaceURI){return!namespaceURI||namespaceURI===NS_XHTML?doc.createElement(name):doc.createElementNS(namespaceURI,name)}function moveChildren(fromEl,toEl){var curChild=fromEl.firstChild;while(curChild){var nextChild=curChild.nextSibling;toEl.appendChild(curChild);curChild=nextChild}return toEl}function syncBooleanAttrProp(fromEl,toEl,name){if(fromEl[name]!==toEl[name]){fromEl[name]=toEl[name];if(fromEl[name]){fromEl.setAttribute(name,"")}else{fromEl.removeAttribute(name)}}}var specialElHandlers={OPTION:function(fromEl,toEl){var parentNode=fromEl.parentNode;if(parentNode){var parentName=parentNode.nodeName.toUpperCase();if(parentName==="OPTGROUP"){parentNode=parentNode.parentNode;parentName=parentNode&&parentNode.nodeName.toUpperCase()}if(parentName==="SELECT"&&!parentNode.hasAttribute("multiple")){if(fromEl.hasAttribute("selected")&&!toEl.selected){fromEl.setAttribute("selected","selected");fromEl.removeAttribute("selected")}parentNode.selectedIndex=-1}}syncBooleanAttrProp(fromEl,toEl,"selected")},INPUT:function(fromEl,toEl){syncBooleanAttrProp(fromEl,toEl,"checked");syncBooleanAttrProp(fromEl,toEl,"disabled");if(fromEl.value!==toEl.value){fromEl.value=toEl.value}if(!toEl.hasAttribute("value")){fromEl.removeAttribute("value")}},TEXTAREA:function(fromEl,toEl){var newValue=toEl.value;if(fromEl.value!==newValue){fromEl.value=newValue}var firstChild=fromEl.firstChild;if(firstChild){var oldValue=firstChild.nodeValue;if(oldValue==newValue||!newValue&&oldValue==fromEl.placeholder){return}firstChild.nodeValue=newValue}},SELECT:function(fromEl,toEl){if(!toEl.hasAttribute("multiple")){var selectedIndex=-1;var i=0;var curChild=fromEl.firstChild;var optgroup;var nodeName;while(curChild){nodeName=curChild.nodeName&&curChild.nodeName.toUpperCase();if(nodeName==="OPTGROUP"){optgroup=curChild;curChild=optgroup.firstChild;if(!curChild){curChild=optgroup.nextSibling;optgroup=null}}else{if(nodeName==="OPTION"){if(curChild.hasAttribute("selected")){selectedIndex=i;break}i++}curChild=curChild.nextSibling;if(!curChild&&optgroup){curChild=optgroup.nextSibling;optgroup=null}}}fromEl.selectedIndex=selectedIndex}}};var ELEMENT_NODE=1;var DOCUMENT_FRAGMENT_NODE$1=11;var TEXT_NODE=3;var COMMENT_NODE=8;function noop(){}function defaultGetNodeKey(node){if(node){return node.getAttribute&&node.getAttribute("id")||node.id}}function morphdomFactory(morphAttrs){return function morphdom(fromNode,toNode,options){if(!options){options={}}if(typeof toNode==="string"){if(fromNode.nodeName==="#document"||fromNode.nodeName==="HTML"){var toNodeHtml=toNode;toNode=doc.createElement("html");toNode.innerHTML=toNodeHtml}else if(fromNode.nodeName==="BODY"){var toNodeBody=toNode;toNode=doc.createElement("html");toNode.innerHTML=toNodeBody;var bodyElement=toNode.querySelector("body");if(bodyElement){toNode=bodyElement}}else{toNode=toElement(toNode)}}else if(toNode.nodeType===DOCUMENT_FRAGMENT_NODE$1){toNode=toNode.firstElementChild}var getNodeKey=options.getNodeKey||defaultGetNodeKey;var onBeforeNodeAdded=options.onBeforeNodeAdded||noop;var onNodeAdded=options.onNodeAdded||noop;var onBeforeElUpdated=options.onBeforeElUpdated||noop;var onElUpdated=options.onElUpdated||noop;var onBeforeNodeDiscarded=options.onBeforeNodeDiscarded||noop;var onNodeDiscarded=options.onNodeDiscarded||noop;var onBeforeElChildrenUpdated=options.onBeforeElChildrenUpdated||noop;var skipFromChildren=options.skipFromChildren||noop;var addChild=options.addChild||function(parent,child){return parent.appendChild(child)};var childrenOnly=options.childrenOnly===true;var fromNodesLookup=Object.create(null);var keyedRemovalList=[];function addKeyedRemoval(key){keyedRemovalList.push(key)}function walkDiscardedChildNodes(node,skipKeyedNodes){if(node.nodeType===ELEMENT_NODE){var curChild=node.firstChild;while(curChild){var key=undefined;if(skipKeyedNodes&&(key=getNodeKey(curChild))){addKeyedRemoval(key)}else{onNodeDiscarded(curChild);if(curChild.firstChild){walkDiscardedChildNodes(curChild,skipKeyedNodes)}}curChild=curChild.nextSibling}}}function removeNode(node,parentNode,skipKeyedNodes){if(onBeforeNodeDiscarded(node)===false){return}if(parentNode){parentNode.removeChild(node)}onNodeDiscarded(node);walkDiscardedChildNodes(node,skipKeyedNodes)}function indexTree(node){if(node.nodeType===ELEMENT_NODE||node.nodeType===DOCUMENT_FRAGMENT_NODE$1){var curChild=node.firstChild;while(curChild){var key=getNodeKey(curChild);if(key){fromNodesLookup[key]=curChild}indexTree(curChild);curChild=curChild.nextSibling}}}indexTree(fromNode);function handleNodeAdded(el){onNodeAdded(el);var curChild=el.firstChild;while(curChild){var nextSibling=curChild.nextSibling;var key=getNodeKey(curChild);if(key){var unmatchedFromEl=fromNodesLookup[key];if(unmatchedFromEl&&compareNodeNames(curChild,unmatchedFromEl)){curChild.parentNode.replaceChild(unmatchedFromEl,curChild);morphEl(unmatchedFromEl,curChild)}else{handleNodeAdded(curChild)}}else{handleNodeAdded(curChild)}curChild=nextSibling}}function cleanupFromEl(fromEl,curFromNodeChild,curFromNodeKey){while(curFromNodeChild){var fromNextSibling=curFromNodeChild.nextSibling;if(curFromNodeKey=getNodeKey(curFromNodeChild)){addKeyedRemoval(curFromNodeKey)}else{removeNode(curFromNodeChild,fromEl,true)}curFromNodeChild=fromNextSibling}}function morphEl(fromEl,toEl,childrenOnly){var toElKey=getNodeKey(toEl);if(toElKey){delete fromNodesLookup[toElKey]}if(!childrenOnly){var beforeUpdateResult=onBeforeElUpdated(fromEl,toEl);if(beforeUpdateResult===false){return}else if(beforeUpdateResult instanceof HTMLElement){fromEl=beforeUpdateResult;indexTree(fromEl)}morphAttrs(fromEl,toEl);onElUpdated(fromEl);if(onBeforeElChildrenUpdated(fromEl,toEl)===false){return}}if(fromEl.nodeName!=="TEXTAREA"){morphChildren(fromEl,toEl)}else{specialElHandlers.TEXTAREA(fromEl,toEl)}}function morphChildren(fromEl,toEl){var skipFrom=skipFromChildren(fromEl,toEl);var curToNodeChild=toEl.firstChild;var curFromNodeChild=fromEl.firstChild;var curToNodeKey;var curFromNodeKey;var fromNextSibling;var toNextSibling;var matchingFromEl;outer:while(curToNodeChild){toNextSibling=curToNodeChild.nextSibling;curToNodeKey=getNodeKey(curToNodeChild);while(!skipFrom&&curFromNodeChild){fromNextSibling=curFromNodeChild.nextSibling;if(curToNodeChild.isSameNode&&curToNodeChild.isSameNode(curFromNodeChild)){curToNodeChild=toNextSibling;curFromNodeChild=fromNextSibling;continue outer}curFromNodeKey=getNodeKey(curFromNodeChild);var curFromNodeType=curFromNodeChild.nodeType;var isCompatible=undefined;if(curFromNodeType===curToNodeChild.nodeType){if(curFromNodeType===ELEMENT_NODE){if(curToNodeKey){if(curToNodeKey!==curFromNodeKey){if(matchingFromEl=fromNodesLookup[curToNodeKey]){if(fromNextSibling===matchingFromEl){isCompatible=false}else{fromEl.insertBefore(matchingFromEl,curFromNodeChild);if(curFromNodeKey){addKeyedRemoval(curFromNodeKey)}else{removeNode(curFromNodeChild,fromEl,true)}curFromNodeChild=matchingFromEl;curFromNodeKey=getNodeKey(curFromNodeChild)}}else{isCompatible=false}}}else if(curFromNodeKey){isCompatible=false}isCompatible=isCompatible!==false&&compareNodeNames(curFromNodeChild,curToNodeChild);if(isCompatible){morphEl(curFromNodeChild,curToNodeChild)}}else if(curFromNodeType===TEXT_NODE||curFromNodeType==COMMENT_NODE){isCompatible=true;if(curFromNodeChild.nodeValue!==curToNodeChild.nodeValue){curFromNodeChild.nodeValue=curToNodeChild.nodeValue}}}if(isCompatible){curToNodeChild=toNextSibling;curFromNodeChild=fromNextSibling;continue outer}if(curFromNodeKey){addKeyedRemoval(curFromNodeKey)}else{removeNode(curFromNodeChild,fromEl,true)}curFromNodeChild=fromNextSibling}if(curToNodeKey&&(matchingFromEl=fromNodesLookup[curToNodeKey])&&compareNodeNames(matchingFromEl,curToNodeChild)){if(!skipFrom){addChild(fromEl,matchingFromEl)}morphEl(matchingFromEl,curToNodeChild)}else{var onBeforeNodeAddedResult=onBeforeNodeAdded(curToNodeChild);if(onBeforeNodeAddedResult!==false){if(onBeforeNodeAddedResult){curToNodeChild=onBeforeNodeAddedResult}if(curToNodeChild.actualize){curToNodeChild=curToNodeChild.actualize(fromEl.ownerDocument||doc)}addChild(fromEl,curToNodeChild);handleNodeAdded(curToNodeChild)}}curToNodeChild=toNextSibling;curFromNodeChild=fromNextSibling}cleanupFromEl(fromEl,curFromNodeChild,curFromNodeKey);var specialElHandler=specialElHandlers[fromEl.nodeName];if(specialElHandler){specialElHandler(fromEl,toEl)}}var morphedNode=fromNode;var morphedNodeType=morphedNode.nodeType;var toNodeType=toNode.nodeType;if(!childrenOnly){if(morphedNodeType===ELEMENT_NODE){if(toNodeType===ELEMENT_NODE){if(!compareNodeNames(fromNode,toNode)){onNodeDiscarded(fromNode);morphedNode=moveChildren(fromNode,createElementNS(toNode.nodeName,toNode.namespaceURI))}}else{morphedNode=toNode}}else if(morphedNodeType===TEXT_NODE||morphedNodeType===COMMENT_NODE){if(toNodeType===morphedNodeType){if(morphedNode.nodeValue!==toNode.nodeValue){morphedNode.nodeValue=toNode.nodeValue}return morphedNode}else{morphedNode=toNode}}}if(morphedNode===toNode){onNodeDiscarded(fromNode)}else{if(toNode.isSameNode&&toNode.isSameNode(morphedNode)){return}morphEl(morphedNode,toNode,childrenOnly);if(keyedRemovalList){for(var i=0,len=keyedRemovalList.length;i<len;i++){var elToRemove=fromNodesLookup[keyedRemovalList[i]];if(elToRemove){removeNode(elToRemove,elToRemove.parentNode,false)}}}}if(!childrenOnly&&morphedNode!==fromNode&&fromNode.parentNode){if(morphedNode.actualize){morphedNode=morphedNode.actualize(fromNode.ownerDocument||doc)}fromNode.parentNode.replaceChild(morphedNode,fromNode)}return morphedNode}}var morphdom=morphdomFactory(morphAttrs);return morphdom});</script>
@@ -865,7 +899,7 @@ function photoItems(list, slotsOn, defaultSlot){
 class Component extends DCLogic {
   constructor(props){
     super(props);
-    this.state = { open: null, idx: 1, playing: null, copied: false, lb: null };
+    this.state = { open: null, idx: 1, playing: null, copied: false, lb: null, fs: false, zoom: false };
     this.workRef = { current: null };
     this.viewerRef = { current: null };
     this.deckRef = { current: null };
@@ -877,8 +911,35 @@ class Component extends DCLogic {
   }
   openProject(id, s, target){
     var self = this;
-    this.setState({ open: id, idx: s || 1, playing: null }, function(){
+    this.setState({ open: id, idx: s || 1, playing: null, fs: false, zoom: false }, function(){
       self.scrollTo(target === "deck" ? self.deckRef : self.viewerRef);
+    });
+  }
+  openFs(){
+    var self = this;
+    this.setState({ fs: true, zoom: false }, function(){
+      try { document.body.style.overflow = "hidden"; } catch (e) {}
+      setTimeout(function(){
+        var el = document.querySelector(".fsx");
+        if (el) { try { el.focus({ preventScroll: true }); } catch (e) {} }
+        try { var d = document.documentElement; if (d.requestFullscreen && !document.fullscreenElement) { var pr = d.requestFullscreen(); if (pr && pr.catch) pr.catch(function(){}); } } catch (e) {}
+      }, 30);
+    });
+  }
+  closeFs(){
+    this.setState({ fs: false, zoom: false }, function(){
+      try { document.body.style.overflow = ""; } catch (e) {}
+      try { if (document.fullscreenElement && document.exitFullscreen) { var pr = document.exitFullscreen(); if (pr && pr.catch) pr.catch(function(){}); } } catch (e) {}
+    });
+  }
+  toggleZoom(){
+    var w = 0;
+    if (!this.state.zoom) { try { var im = document.querySelector(".fsimg"); w = Math.round(im.getBoundingClientRect().width * (window.innerWidth < 760 ? 2.5 : 2)); } catch (e) {} }
+    this.setState({ zoom: !this.state.zoom, zoomW: w }, function(){
+      setTimeout(function(){
+        var sc = document.querySelector(".fsscroll");
+        if (sc) { sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) / 2; sc.scrollTop = (sc.scrollHeight - sc.clientHeight) / 2; }
+      }, 30);
     });
   }
   goSlide(i, scroll){
@@ -964,6 +1025,19 @@ class Component extends DCLogic {
             else if (e.key === "ArrowLeft") { e.preventDefault(); self.goSlide(self.state.idx - 1, false); }
           },
           thumbs: thumbs,
+          fs: !!st.fs,
+          zoomLabel: st.zoom ? "Fit to screen" : "Zoom in",
+          fsImgCls: st.zoom ? "fsimg zoomed" : "fsimg",
+          fsImgStyle: st.zoom && st.zoomW ? "width: " + st.zoomW + "px" : "",
+          openFs: function(){ self.openFs(); },
+          closeFs: function(e){ if (e) e.stopPropagation(); self.closeFs(); },
+          toggleZoom: function(e){ if (e) e.stopPropagation(); self.toggleZoom(); },
+          fsKey: function(e){
+            if (e.key === "ArrowRight") { e.preventDefault(); self.goSlide(self.state.idx + 1, false); }
+            else if (e.key === "ArrowLeft") { e.preventDefault(); self.goSlide(self.state.idx - 1, false); }
+            else if (e.key === "Escape") { e.preventDefault(); self.closeFs(); }
+            else if (e.key === "+" || e.key === "=" || e.key === "-") { e.preventDefault(); if ((e.key === "-") === !!self.state.zoom) self.toggleZoom(); }
+          },
           chapters: p.ch.map(function(c){ return { label: c[1], num: pad(c[0]), cur: c[0] === curCh, notCur: c[0] !== curCh, go: function(){ self.goSlide(c[0], false); } }; })
         };
       }
