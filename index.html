@@ -14,6 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&amp;family=Playfair+Display:ital,wght@1,700;1,800&amp;display=swap" rel="stylesheet">
 <style>
 body{margin:0;background:#FBE4E5}
+@media (max-width: 760px){body{background:#FFFFFF}.pagepad{padding:0!important;background:#FFFFFF!important}}
 *{box-sizing:border-box}
 a{color:#B0252C;text-decoration:none}a:hover{color:#8E1C22}
 button{font:inherit;cursor:pointer}
@@ -97,15 +98,14 @@ button{font:inherit;cursor:pointer}
   .stage img{max-height:380px!important}
   .arrow{top:auto!important;bottom:10px!important;transform:none!important}
   .arrow.prev{left:auto!important;right:62px!important}
-  .frame{padding:8px!important;border-radius:16px!important}
-  .pagepad{padding:10px!important}
+  .frame{padding:8px!important;border-radius:0!important;box-shadow:none!important}
   .tight{padding:22px 16px!important}
   .h2{font-size:28px!important}
   .cs-title{font-size:30px!important}
 }
 </style>
 
-<style>.reveal:has(.lbx){animation:none!important;transform:none!important}</style>
+<style>.reveal:has(.lbx){animation:none!important;transform:none!important}@media (max-width:760px){body{background:#FFFFFF}}</style>
 </head>
 <body>
 <div id="app"></div>
